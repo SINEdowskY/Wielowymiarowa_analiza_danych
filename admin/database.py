@@ -15,9 +15,14 @@ class DatabaseMisc:
         with self.engine.connect() as connection:
             result = connection.execute(query)
             return result.scalar() == 1
-        
-    def database_user_exists(self, username: str):
-        pass
+    
+    def user_database_exists(self, username: str, database:str):
+        query_use = text(f"USE {database};")
+        query = text(f"SELECT 1 FROM sys.server_principals WHERE name = '{username}'")
+        with self.engine.connect() as connection:
+            connection.execute(query_use)
+            result = connection.execute(query)
+            return result.scalar() == 1
 
 class Database:
     def __init__(self, username:str, password:str, database:str, server:str) -> None:
@@ -56,33 +61,68 @@ class DatabaseAdmin(Database):
         else:
             print(f"The database '{database_name}' does not exist.")
     
-    def create_login(self, login:str, password:str):
-        user_exists = self.misc.login_exists(login)
+    # def create_login(self, login:str, password:str):
+    #     login_exists = self.misc.login_exists(login)
         
-        if user_exists:
-            print(f"The user '{login}' exists.")
-        else:
-            with self._engine.connect() as connection:
-                connection.execute(
-                    text(f"CREATE LOGIN {login} WITH PASSWORD = '{password}'")
-                )
-                connection.commit()
-                print(f"Created Login: {login}")
-                connection.close()
+    #     if login_exists:
+    #         print(f"The login '{login}' exists.")
+    #     else:
+    #         with self._engine.connect() as connection:
+    #             connection.execute(
+    #                 text(f"CREATE LOGIN {login} WITH PASSWORD = '{password}'")
+    #             )
+    #             connection.commit()
+    #             print(f"Created Login: {login}")
+    #             connection.close()
     
-    def drop_login(self, login:str):
-        user_exists = self.misc.login_exists(login)
+    # def drop_login(self, login:str):
+    #     login_exists = self.misc.login_exists(login)
 
-        if user_exists:
-            with self._engine.connect() as connection:
-                connection.execute(
-                    text(f"DROP LOGIN {login}")
-                )
-                connection.commit()
-                print(f"Dropped Login: {login}")
-                connection.close()
+    #     if login_exists:
+    #         with self._engine.connect() as connection:
+    #             connection.execute(
+    #                 text(f"DROP LOGIN {login}")
+    #             )
+    #             connection.commit()
+    #             print(f"Dropped Login: {login}")
+    #             connection.close()
             
-        else:
-            print(f"The user '{login}' does not exist.")
+    #     else:
+    #         print(f"The login '{login}' does not exist.")
+    
+    # def add_user_database(self, username: str, database: str):
+    #     user_exists = self.misc.user_database_exists(username, database)
+    #     print(user_exists)
+    #     # if user_exists:
+    #     #     print(f"The user {username} already exists.")
+    #     # else:
+    #     #     with self._engine.connect() as connection:
+    #     #         connection.execute(
+    #     #             text(f"USE {database};")
+    #     #         )
+    #     #         connection.execute(
+    #     #             text(f"CREATE USER {username} FOR LOGIN;")
+    #     #         )
+    #     #         connection.commit()
+    #     #         print(f"Created User: {username}")
+    #     #         connection.close()
+    
+    # def drop_user_database(self, username: str, database: str):
+    #     user_exists = self.misc.user_database_exists(username, database)
+
+    #     if user_exists:
+    #          with self._engine.connect() as connection:
+    #             connection.execute(
+    #                 text(f"USE {database};")
+    #             )
+    #             connection.execute(
+    #                 text(f"DROP USER {username};")
+    #             )
+    #             connection.commit()
+    #             print(f"Dropped User: {username}")
+    #             connection.close()
+    #     else:
+    #         print(f"The user '{username}' does not exist.")
+           
 
     
