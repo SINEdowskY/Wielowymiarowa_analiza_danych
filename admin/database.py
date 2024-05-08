@@ -1,68 +1,88 @@
-import pyodbc
-from abc import ABC
+from sqlalchemy import create_engine, Engine, text, inspect
 
-class DB:
-    def __init__(self) -> None:
-        self._server = None
-        self._database = None
-        self._username = None
-        self._password = None
-        self._driver = None
+class DatabaseMisc:
+    def __init__(self, engine: Engine) -> None:
+        self.engine = engine
+
+    def database_exists(self, db_name:str) -> bool:
+        query = text(f"SELECT COUNT(*) FROM sys.databases WHERE name = '{db_name}'")
+        with self.engine.connect() as connection:
+            result = connection.execute(query)
+            return result.scalar() == 1
     
-    def _connection_str(self) -> str:
-        conn_str = f'DRIVER={self._driver};\
-            SERVER={self._server}; \
-            DATABASE={self._database};\
-            UID={self._username};\
-            PWD={self._password}'
-        return conn_str
-
-    def custom_query(self, query: str):
-        with pyodbc.connect(self._connection_str()) as connection:
-            connection.autocommit = True
-            cursor = connection.cursor()
-            cursor.execute(query)
-            cursor.commit()
-            print(f"Executed: {query}")
-            cursor.close()
-            connection.close()
-
-class DBAdmin(DB):
-    def __init__(self) -> None:
-        self._server = 'localhost'
-        self._database = 'master'
-        self._username = 'sa'
-        self._password = 'YourStrongPassword123'
-        self._driver = '{ODBC Driver 17 for SQL Server}'
-    
-    def custom_db_user(self, login: str, password: str, db: str):
-        with pyodbc.connect(self._connection_str()) as connection:
-            connection.autocommit = True
-            cursor = connection.cursor()
-            cursor.execute(f"CREATE LOGIN {login} WITH PASSWORD = '{password}';")
-            cursor.execute(f"USE {db};")
-            cursor.execute(f"CREATE USER {login} FOR LOGIN {login};")
-            cursor.commit()
-            cursor.close()
-            connection.close()
-
-
-
-class DBData(DB):
-    def __init__(self) -> None:
-        self._server = 'localhost'
-        self._database = 'Data'
-        self._username = 'WAD169781'
-        self._password = 'YourStrongPassword123'
-        self._driver = '{ODBC Driver 17 for SQL Server}'
-    
-    def csv_to_sql_table(self) -> None:
+    def login_exists(self, login: str):
+        query = text(f"SELECT COUNT(*) FROM sys.sql_logins WHERE name = '{login}'")
+        with self.engine.connect() as connection:
+            result = connection.execute(query)
+            return result.scalar() == 1
+        
+    def database_user_exists(self, username: str):
         pass
 
-class DBDataAgg(DB):
-    def __init__(self) -> None:
-        self._server = 'localhost'
-        self._database = 'DataAgg'
-        self._username = 'sa'
-        self._password = 'YourStrongPassword123'
-        self._driver = '{ODBC Driver 17 for SQL Server}'
+class Database:
+    def __init__(self, username:str, password:str, database:str, server:str) -> None:
+        self._server = server
+        self._database = database
+        self._username = username
+        self._password = password
+        self._driver = "ODBC Driver 17 for SQL Server"
+
+        self._connection_url = f"mssql+pyodbc://{self._username}:{self._password}@{self._server}:1433/{self._database}?driver={self._driver}"
+        
+        self._engine = create_engine(self._connection_url, isolation_level="AUTOCOMMIT")
+        self.misc = DatabaseMisc(self._engine)
+
+class DatabaseAdmin(Database):
+    
+    def create_database(self, database_name:str):
+        db_exists = self.misc.database_exists(db_name = database_name)
+        if db_exists:
+            print(f"The database '{database_name}' exists.")
+        else:
+            with self._engine.connect() as connection:
+                connection.execute(text(f"CREATE DATABASE {database_name}"))
+                connection.commit()
+                print(f"Created Database: {database_name}")
+                connection.close()
+    
+    def drop_database(self, database_name:str):
+        db_exists = self.misc.database_exists(db_name = database_name)
+        if db_exists:
+            with self._engine.connect() as connection:
+                connection.execute(text(f"DROP DATABASE {database_name}"))
+                connection.commit()
+                print(f"Dropped Database: {database_name}")
+                connection.close()
+        else:
+            print(f"The database '{database_name}' does not exist.")
+    
+    def create_login(self, login:str, password:str):
+        user_exists = self.misc.login_exists(login)
+        
+        if user_exists:
+            print(f"The user '{login}' exists.")
+        else:
+            with self._engine.connect() as connection:
+                connection.execute(
+                    text(f"CREATE LOGIN {login} WITH PASSWORD = '{password}'")
+                )
+                connection.commit()
+                print(f"Created Login: {login}")
+                connection.close()
+    
+    def drop_login(self, login:str):
+        user_exists = self.misc.login_exists(login)
+
+        if user_exists:
+            with self._engine.connect() as connection:
+                connection.execute(
+                    text(f"DROP LOGIN {login}")
+                )
+                connection.commit()
+                print(f"Dropped Login: {login}")
+                connection.close()
+            
+        else:
+            print(f"The user '{login}' does not exist.")
+
+    

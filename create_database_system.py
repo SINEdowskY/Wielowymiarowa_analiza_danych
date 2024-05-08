@@ -1,11 +1,8 @@
-from admin.database import DBAdmin
+from admin.database import DatabaseAdmin
 
-admin = DBAdmin()
-admin.custom_query("CREATE DATABASE Data")
-admin.custom_query("CREATE DATABASE DataAgg")
+db = DatabaseAdmin("SA", "YourStrongPassword123", "master", "localhost")
 
-admin.custom_db_user("WAD169781", "YourStrongPassword123", "Data")
-admin.custom_db_user("WAD169840", "YourStrongPassword123", "Data")
-
-admin.custom_db_user("WAD169781", "YourStrongPassword123", "DataAgg")
-admin.custom_db_user("WAD169840", "YourStrongPassword123", "DataAgg")
+db.create_database("Data")
+db.create_database("Data_Agg")
+db.create_login("WAD169781", "Debil1234567890")
+db.create_login("WAD169781", "Debil1234567890")
