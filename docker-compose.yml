@@ -15,17 +15,26 @@ services:
 
   my_spark:
     image: jupyter/pyspark-notebook:latest
+    container_name: pyspark-notebook
     user: root
     environment:
       - SPARK_HOME=/usr/local/spark
       - PYSPARK_SUBMIT_ARGS=--driver-class-path /app/mssql-jdbc-12.6.1.jre8.jar pyspark-shell
     ports:
-      - "8888:8888" # Port dla Jupyter
-      - "8501:8501" # Dodatkowy port dla Streamlit
+      - "8888:8888"
     volumes:
-      - ./mssql-jdbc-12.6.1.jre8.jar:/app/mssql-jdbc-12.6.1.jre8.jar
-      - .:/home/jovyan  # Mapowanie całego aktualnego katalogu do kontenera
-      - ./init.sql:/app/init.sql
+      - ./jdbc/mssql-jdbc-12.6.1.jre8.jar:/app/mssql-jdbc-12.6.1.jre8.jar
+      - ./pipelines:/home/jovyan
+  
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mssql
+    restart: always
+
 
 
 volumes:
