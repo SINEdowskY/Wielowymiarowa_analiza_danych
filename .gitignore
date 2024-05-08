@@ -1,3 +1,4 @@
 /pipelines/.*
 /jdbc/*.jar
 __pycache__
+*.csv
