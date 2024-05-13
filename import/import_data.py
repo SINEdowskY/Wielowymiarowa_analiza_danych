@@ -13,10 +13,10 @@ engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}/{database
 
 
 path = "data/preprocessed_data/csv/"
-files = os.listdir(path)
-print(files)
+files = os.listdir(path)[:50]
 
-for file in files:
+for _, file in enumerate(files):
+    print(f"Import {_+1}/50")
     chunks = pd.read_csv(path+file, chunksize=1000)
     for chunk in chunks:
         df = chunk.iloc[:, 1:]
