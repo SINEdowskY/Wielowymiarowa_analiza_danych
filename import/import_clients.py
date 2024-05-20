@@ -17,4 +17,4 @@ path = "data/raw_data/ar_clients.csv"
 chunks = pd.read_csv(path, chunksize=1000)
 for chunk in chunks:
     df = chunk.iloc[:, 1:]
-    df.to_sql("ARClients", engine, if_exists='append', index=False)
+    df.to_sql("ARClients", engine, if_exists='replace', index=False)
